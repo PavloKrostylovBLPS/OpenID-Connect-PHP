@@ -173,7 +173,7 @@ class OpenIDConnectClient
 
     /**
      * @var mixed holds well-known openid configuration parameters, like policy for MS Azure AD B2C User Flow
-     * @see https://docs.microsoft.com/en-us/azure/active-directory-b2c/user-flow-overview 
+     * @see https://docs.microsoft.com/en-us/azure/active-directory-b2c/user-flow-overview
      */
     private $wellKnownConfigParameters = [];
 
@@ -686,7 +686,7 @@ class OpenIDConnectClient
         } else {
             $protocol = 'http';
         }
-	    
+
         if (isset($_SERVER['HTTP_X_FORWARDED_PORT'])) {
             $port = (int)$_SERVER['HTTP_X_FORWARDED_PORT'];
         } elseif (isset($_SERVER['SERVER_PORT'])) {
@@ -709,7 +709,7 @@ class OpenIDConnectClient
         }
 
         $port = (443 === $port) || (80 === $port) ? '' : ':' . $port;
-	    
+
         $explodedRequestUri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI']) : [];
         return sprintf('%s://%s%s/%s', $protocol, $host, $port, trim(reset($explodedRequestUri), '/'));
     }
@@ -744,10 +744,17 @@ class OpenIDConnectClient
 
         // Generate and store a nonce in the session
         // The nonce is an arbitrary value
-        $nonce = $this->setNonce($this->generateRandString());
+
+        $nonce = $this->getNonce();
+        if(empty($nonce)) {
+            $nonce = $this->setNonce($this->generateRandString());
+        }
 
         // State essentially acts as a session key for OIDC
-        $state = $this->setState($this->generateRandString());
+        $state = $this->getState();
+        if(empty($state)) {
+            $state = $this->setState($this->generateRandString());
+        }
 
         $auth_params = array_merge($this->authParams, [
             'response_type' => $response_type,
@@ -1790,7 +1797,7 @@ class OpenIDConnectClient
     /**
      * Stores nonce
      */
-    protected function setNonce(string $nonce): string
+    public function setNonce(string $nonce): string
     {
         $this->setSessionKey('openid_connect_nonce', $nonce);
         return $nonce;
@@ -1801,7 +1808,7 @@ class OpenIDConnectClient
      *
      * @return string
      */
-    protected function getNonce() {
+    public function getNonce() {
         return $this->getSessionKey('openid_connect_nonce');
     }
 
@@ -1810,14 +1817,14 @@ class OpenIDConnectClient
      *
      * @return void
      */
-    protected function unsetNonce() {
+    public function unsetNonce() {
         $this->unsetSessionKey('openid_connect_nonce');
     }
 
     /**
      * Stores $state
      */
-    protected function setState(string $state): string
+    public function setState(string $state): string
     {
         $this->setSessionKey('openid_connect_state', $state);
         return $state;
@@ -1828,7 +1835,7 @@ class OpenIDConnectClient
      *
      * @return string
      */
-    protected function getState() {
+    public function getState() {
         return $this->getSessionKey('openid_connect_state');
     }
 
@@ -1837,7 +1844,7 @@ class OpenIDConnectClient
      *
      * @return void
      */
-    protected function unsetState() {
+    public function unsetState() {
         $this->unsetSessionKey('openid_connect_state');
     }
 
