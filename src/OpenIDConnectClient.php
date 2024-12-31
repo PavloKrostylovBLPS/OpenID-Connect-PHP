@@ -1208,6 +1208,12 @@ class OpenIDConnectClient
             $len = ((int)$bit)/16;
             $expected_at_hash = $this->urlEncode(substr(hash('sha'.$bit, $accessToken, true), 0, $len));
         }
+
+        // Check for tenantid that Microsoft OIDC uses
+        if(isset($claims->tid) && strpos($this->getWellKnownIssuer(), "{tenantid}")){
+            $this->setIssuer(str_replace("{tenantid}", $claims->tid, $this->getWellKnownIssuer()));
+        }
+
         $auds = $claims->aud;
         $auds = is_array( $auds ) ? $auds : [ $auds ];
         return (($this->validateIssuer($claims->iss))
