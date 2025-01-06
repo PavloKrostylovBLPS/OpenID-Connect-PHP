@@ -2094,4 +2094,21 @@ class OpenIDConnectClient
     {
         return "jumbojett/OpenID-Connect-PHP";
     }
+
+    /**
+     * @return false|string
+     * @throws OpenIDConnectClientException
+     */
+    public function getPicture(): false|string
+    {
+        $pictureURL = $this->requestUserInfo('picture');
+        $headers = ["Authorization: Bearer $this->accessToken",
+          'Accept: application/json'];
+        $picture = $this->fetchURL($pictureURL, null, $headers);
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->buffer($picture);
+        if($mimeType === 'application/json') { return false; }
+
+        return ('data:' . $mimeType . ';base64,' . base64_encode($picture));
+    }
 }
