@@ -1181,7 +1181,7 @@ class OpenIDConnectClient
      * @return bool
      * @throws OpenIDConnectClientException
      */
-    protected function validateIssuer(string $iss): bool
+    public function validateIssuer(string $iss): bool
     {
         if ($this->issuerValidator !== null) {
             return $this->issuerValidator->__invoke($iss);
