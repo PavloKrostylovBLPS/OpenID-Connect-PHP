@@ -274,29 +274,33 @@ class OpenIDConnectClient
     /**
      * @param $provider_url
      */
-    public function setProviderURL($provider_url) {
+    public function setProviderURL($provider_url): void
+    {
         $this->providerConfig['providerUrl'] = $provider_url;
     }
 
     /**
      * @param $issuer
      */
-    public function setIssuer($issuer) {
+    public function setIssuer($issuer): void
+    {
         $this->providerConfig['issuer'] = $issuer;
     }
 
     /**
      * @param $response_types
      */
-    public function setResponseTypes($response_types) {
+    public function setResponseTypes($response_types): void
+    {
         $this->responseTypes = array_merge($this->responseTypes, (array)$response_types);
     }
 
     /**
+     * @param string|null $code
      * @return bool
      * @throws OpenIDConnectClientException
      */
-    public function authenticate(): bool
+    public function authenticate(string $code = null): bool
     {
         // Do a preemptive check to see if the provider has thrown an error from a previous redirect
         if (isset($_REQUEST['error'])) {
@@ -305,10 +309,10 @@ class OpenIDConnectClient
         }
 
         // If we have an authorization code then proceed to request a token
-        if (isset($_REQUEST['code'])) {
+        if (isset($_REQUEST['code']) || $code !== null) {
 
-            $code = $_REQUEST['code'];
-            $token_json = $this->requestTokens($code);
+            $requestCode = $code !== null ? $code : $_REQUEST['code'];
+            $token_json = $this->requestTokens($requestCode);
 
             // Throw an error if the server returns one
             if (isset($token_json->error)) {
@@ -319,7 +323,7 @@ class OpenIDConnectClient
             }
 
             // Do an OpenID Connect session check
-	    if (!isset($_REQUEST['state']) || ($_REQUEST['state'] !== $this->getState())) {
+	          if (!isset($_REQUEST['state']) || ($_REQUEST['state'] !== $this->getState())) {
                 throw new OpenIDConnectClientException('Unable to determine state');
             }
 
@@ -432,7 +436,8 @@ class OpenIDConnectClient
      *
      * @throws OpenIDConnectClientException
      */
-    public function signOut(string $idToken, $redirect) {
+    public function signOut(string $idToken, ?string $redirect = null): void
+    {
         $sign_out_endpoint = $this->getProviderConfigValue('end_session_endpoint');
 
         if($redirect === null){
@@ -774,6 +779,12 @@ class OpenIDConnectClient
         if (count($this->responseTypes) > 0) {
             $auth_params = array_merge($auth_params, ['response_type' => implode(' ', $this->responseTypes)]);
         }
+
+        $scopes = array_unique(explode(' ', $auth_params['scope']));
+        $auth_params['scope'] = implode(' ', $scopes);
+
+        $response_types = array_unique(explode(' ', $auth_params['response_type']));
+        $auth_params['response_type'] = implode(' ', $response_types);
 
         // If the client supports Proof Key for Code Exchange (PKCE)
         $codeChallengeMethod = $this->getCodeChallengeMethod();
