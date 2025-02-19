@@ -742,7 +742,7 @@ class OpenIDConnectClient
      * @throws OpenIDConnectClientException
      * @throws Exception
      */
-    private function requestAuthorization() {
+    public function requestAuthorization() {
 
         $auth_endpoint = $this->getProviderConfigValue('authorization_endpoint');
         $response_type = 'code';
