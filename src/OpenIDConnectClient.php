@@ -296,23 +296,31 @@ class OpenIDConnectClient
     }
 
     /**
-     * @param string|null $code
+     * Authenticate method
+     * $params['error']: Error code
+     * $params['error_description']: Error description
+     * $params['code']: Authentication code
+     * $params['state']: State
+     * $params['id_token']: JWT token
+     * $params['access_token']: Bearer authorization token
+     *
+     * @param array $params
      * @return bool
      * @throws OpenIDConnectClientException
      */
-    public function authenticate(string $code = null): bool
+    public function authenticate(array $params = []): bool
     {
+        $params = $this->prepareAuthParams($params);
+
         // Do a preemptive check to see if the provider has thrown an error from a previous redirect
-        if (isset($_REQUEST['error'])) {
-            $desc = isset($_REQUEST['error_description']) ? ' Description: ' . $_REQUEST['error_description'] : '';
-            throw new OpenIDConnectClientException('Error: ' . $_REQUEST['error'] .$desc);
+        if (isset($params['error'])) {
+            $desc = isset($params['error_description']) ? ' Description: ' . $params['error_description'] : '';
+            throw new OpenIDConnectClientException('Error: ' . $params['error'] .$desc);
         }
 
         // If we have an authorization code then proceed to request a token
-        if (isset($_REQUEST['code']) || $code !== null) {
-
-            $requestCode = $code !== null ? $code : $_REQUEST['code'];
-            $token_json = $this->requestTokens($requestCode);
+        if (isset($params['code'])) {
+            $token_json = $this->requestTokens($params['code']);
 
             // Throw an error if the server returns one
             if (isset($token_json->error)) {
@@ -323,7 +331,7 @@ class OpenIDConnectClient
             }
 
             // Do an OpenID Connect session check
-	          if (!isset($_REQUEST['state']) || ($_REQUEST['state'] !== $this->getState())) {
+	          if (!isset($params['state']) || ($params['state'] !== $this->getState())) {
                 throw new OpenIDConnectClientException('Unable to determine state');
             }
 
@@ -376,16 +384,16 @@ class OpenIDConnectClient
             throw new OpenIDConnectClientException ('Unable to verify JWT claims');
         }
 
-        if ($this->allowImplicitFlow && isset($_REQUEST['id_token'])) {
+        if ($this->allowImplicitFlow && isset($params['id_token'])) {
             // if we have no code but an id_token use that
-            $id_token = $_REQUEST['id_token'];
+            $id_token = $params['id_token'];
 
-            $accessToken = $_REQUEST['access_token'] ?? null;
+            $accessToken = $params['access_token'] ?? null;
 
             // Do an OpenID Connect session check
-    	    if (!isset($_REQUEST['state']) || ($_REQUEST['state'] !== $this->getState())) {
-                throw new OpenIDConnectClientException('Unable to determine state');
-            }
+//    	    if (!isset($params['state']) || ($params['state'] !== $this->getState())) {
+//                throw new OpenIDConnectClientException('Unable to determine state');
+//          }
 
             // Cleanup state
             $this->unsetState();
@@ -422,6 +430,21 @@ class OpenIDConnectClient
 
         $this->requestAuthorization();
         return false;
+    }
+
+    /**
+     * @param array $params
+     * @return array
+     */
+    protected function prepareAuthParams(array $params = []): array
+    {
+        $variables = ['error', 'error_description', 'code', 'state', 'id_token', 'access_token'];
+        foreach ($variables as $variable) {
+            if (!isset($params[$variable]) && isset($_REQUEST[$variable])) {
+                $params[$variable] = $_REQUEST[$variable];
+            }
+        }
+        return $params;
     }
 
     /**
