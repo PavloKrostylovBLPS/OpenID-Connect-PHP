@@ -2136,6 +2136,10 @@ class OpenIDConnectClient
     public function getPicture(): false|string
     {
         $pictureURL = $this->requestUserInfo('picture');
+        if(empty($pictureURL)) { return false; }
+        if(str_starts_with($pictureURL, '//')) {
+            $pictureURL = 'https:'.$pictureURL;
+        }
         $headers = ["Authorization: Bearer $this->accessToken",
           'Accept: application/json'];
         $picture = $this->fetchURL($pictureURL, null, $headers);
