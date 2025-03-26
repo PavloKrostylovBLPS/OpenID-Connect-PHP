@@ -276,7 +276,7 @@ class OpenIDConnectClient
      */
     public function setProviderURL($provider_url): void
     {
-        $this->providerConfig['providerUrl'] = $provider_url;
+        $this->setProviderConfigValue('providerUrl', $provider_url);
     }
 
     /**
@@ -284,7 +284,16 @@ class OpenIDConnectClient
      */
     public function setIssuer($issuer): void
     {
-        $this->providerConfig['issuer'] = $issuer;
+        $this->setProviderConfigValue('issuer', $issuer);
+    }
+
+    /**
+     * @param array|null $methods
+     * @return void
+     */
+    public function setCodeChallengeMethodsSupported(?array $methods): void
+    {
+        $this->setProviderConfigValue('code_challenge_methods_supported', $methods);
     }
 
     /**
@@ -623,6 +632,20 @@ class OpenIDConnectClient
         }
 
         return $this->providerConfig[$param];
+    }
+
+    /**
+     * @param string $param
+     * @param mixed $value
+     * @return void
+     */
+    protected function setProviderConfigValue(string $param, mixed $value): void
+    {
+        if($value === null){
+            unset($this->providerConfig[$param]);
+        } else {
+            $this->providerConfig[$param] = $value;
+        }
     }
 
     /**
